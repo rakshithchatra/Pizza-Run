@@ -60,3 +60,4 @@ h2 { margin:0; font-size:44px; font-weight:900; text-shadow:0 4px 0 rgba(28,35,6
 #coach { position:absolute; left:50%; top:30%; translate:-50% 0; background:var(--cream); color:var(--navy); border-radius:999px; padding:10px 24px; font-size:26px; font-weight:900; white-space:nowrap; box-shadow:0 5px 0 rgba(28,35,64,.3); }
 #count { position:absolute; left:50%; top:38%; translate:-50% -50%; font-size:110px; font-weight:900; text-shadow:0 6px 0 rgba(28,35,64,.5); }
 #count.pop { animation-duration:.4s; }
+.tiny { margin-top:8px; font-size:12px; font-weight:700; color:#fff; opacity:.8; }
