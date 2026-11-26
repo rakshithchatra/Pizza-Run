@@ -12,15 +12,18 @@
 <div id="hud" class="layer" hidden>
   <div class="row">
     <div class="left">
-      <span class="pill"><svg viewBox="0 0 20 20"><path d="M10 19 2 4h16z" fill="#ffc94a"/><path d="M1 2h18v3H1z" fill="#e0a440"/><circle cx="8" cy="8" r="1.7" fill="#b8261a"/><circle cx="12" cy="10" r="1.7" fill="#b8261a"/><circle cx="10" cy="14" r="1.4" fill="#b8261a"/></svg><span id="h-pizzas">0</span></span>
+      <span class="pill" id="h-pill"><svg viewBox="0 0 20 20"><path d="M10 19 2 4h16z" fill="#ffc94a"/><path d="M1 2h18v3H1z" fill="#e0a440"/><circle cx="8" cy="8" r="1.7" fill="#b8261a"/><circle cx="12" cy="10" r="1.7" fill="#b8261a"/><circle cx="10" cy="14" r="1.4" fill="#b8261a"/></svg><span id="h-pizzas">0</span></span>
       <span class="power" id="p-magnet" hidden><span>Magnet</span></span>
       <span class="power" id="p-x2" hidden><span>2x pizzas</span></span>
     </div>
     <div>
       <span class="pill" style="padding-left:14px" id="h-score">0</span>
       <button id="pause" aria-label="Pause">II</button>
+      <button id="h-mute" aria-label="Turn sound off"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="cross" d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
   </div>
+  <div id="coach" hidden></div>
+  <div id="count" hidden></div>
 </div>
 
 <div id="menu" class="layer screen">

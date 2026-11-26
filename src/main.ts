@@ -23,6 +23,7 @@ const game = createGame($('game') as HTMLCanvasElement, {
       sfx.pickup(streak++);
     } else if (kind === 'pie') sfx.pie();
     else sfx.power();
+    if (kind === 'slice' || kind === 'pie') pop($('h-pill'));
   },
   jump: sfx.jump,
   slide: sfx.slide,
@@ -30,7 +31,12 @@ const game = createGame($('game') as HTMLCanvasElement, {
   crash() { sfx.crash(); buzz(ImpactStyle.Heavy); setTimeout(endRun, 900); },
 });
 
-if (import.meta.env.DEV) Object.assign(window, { game });
+/** Restart a one-shot CSS animation. */
+function pop(el: HTMLElement) {
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
 
 function show(id: 'menu' | 'hud' | 'over' | 'paused') {
   for (const s of ['menu', 'hud', 'over', 'paused']) $(s).hidden = s !== id && !(s === 'hud' && id === 'paused');
@@ -43,7 +49,20 @@ function drawMenu() {
   $('cblurb').textContent = c.blurb;
   $('wallet').textContent = fmt(save.wallet);
   $('best').textContent = fmt(save.best);
+  drawMute();
+}
+
+function drawMute() {
   $('mute').textContent = save.muted ? 'Sound off' : 'Sound on';
+  $('h-mute').classList.toggle('off', save.muted);
+  $('h-mute').setAttribute('aria-label', save.muted ? 'Turn sound on' : 'Turn sound off');
+}
+
+function toggleMute() {
+  save.muted = !save.muted;
+  sfx.setMuted(save.muted);
+  store(save);
+  drawMute();
 }
 
 function pickRunner(step: number) {
@@ -87,10 +106,46 @@ function endRun() {
   show('over');
 }
 
+// Resuming counts down 3-2-1 so you are not dropped straight into an obstacle.
+let countdown = 0;
 function pause(on: boolean) {
   if (game.state !== 'run') return;
-  game.setPaused(on);
-  show(on ? 'paused' : 'hud');
+  clearInterval(countdown);
+  $('count').hidden = true;
+  if (on) {
+    game.setPaused(true);
+    return show('paused');
+  }
+  if (!game.paused) return;
+  show('hud');
+  let n = 3;
+  const tick = () => {
+    $('count').hidden = n === 0;
+    $('count').textContent = String(n);
+    pop($('count'));
+    if (n-- === 0) {
+      clearInterval(countdown);
+      game.setPaused(false);
+    }
+  };
+  tick();
+  countdown = window.setInterval(tick, 600);
+}
+
+// First run only: name the move as each kind of obstacle comes up in your lane.
+const COACH = { block: '\u2190 Dodge \u2192', jump: '\u2191 Jump', slide: '\u2193 Slide' };
+const coached = new Set<string>();
+function coach() {
+  const d = game.ahead();
+  const o = d.obs.find((o) => o.lane === d.lane && o.s0 > d.dist && o.s0 - d.dist < d.speed * 1.1);
+  $('coach').hidden = !o;
+  if (!o) return;
+  $('coach').textContent = COACH[o.how];
+  coached.add(o.how);
+  if (coached.size === 3) {
+    save.coached = true;
+    store(save);
+  }
 }
 
 $('play').onclick = play;
@@ -101,12 +156,8 @@ $('next').onclick = () => pickRunner(1);
 $('pause').onclick = () => pause(true);
 $('resume').onclick = () => pause(false);
 $('quit').onclick = () => { bank(); toMenu(); };
-$('mute').onclick = () => {
-  save.muted = !save.muted;
-  sfx.setMuted(save.muted);
-  store(save);
-  drawMenu();
-};
+$('mute').onclick = toggleMute;
+$('h-mute').onclick = toggleMute;
 document.addEventListener('visibilitychange', () => document.hidden && pause(true));
 
 listen(
@@ -116,7 +167,8 @@ listen(
   },
   (key) => {
     if (key === 'Enter' && game.state !== 'run') play();
-    if (key === 'Escape' || key === 'p') pause(!game.paused);
+    if (key === 'm') toggleMute();
+    if (key === 'Escape' || key === 'p') pause($('paused').hidden !== false);
   },
 );
 
@@ -131,6 +183,8 @@ function loop(ms: number) {
       $(id).hidden = left <= 0;
       $(id).style.setProperty('--left', String(left));
     }
+    if (!save.coached && !game.paused) coach();
+    else $('coach').hidden = true;
   }
   requestAnimationFrame(loop);
 }

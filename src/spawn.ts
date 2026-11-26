@@ -20,6 +20,8 @@ export const META: Record<ObstacleKind, { how: How; len: number; h: number }> = 
   banner: { how: 'slide', len: 0.3, h: 1.35 },
 };
 
+export const LANE = 2; // lane width in metres; lanes sit at x = -2, 0, 2
+
 // Shared with the player physics so pizza trails follow the real jump arc.
 export const GRAVITY = 26;
 export const JUMP_V = 8.8;
@@ -65,7 +67,7 @@ export function spawner(seed: number) {
       return pick(KINDS[c]);
     });
     const len = Math.max(1, ...cells.map((k) => (k ? META[k].len : 0)));
-    const gap = Math.max(9, speed * (1.15 - 0.45 * d));
+    const gap = Math.max(9, speed * (1.15 - 0.33 * d)); // seconds of clear road: 1.15 at the start, 0.82 at top speed
     const s = cursor + gap;
     cursor = s + len;
 

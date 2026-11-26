@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { pie } from './pizza';
 import { box, C, cyl, ico, rbox, rng, sign, sphere } from './util';
 
-export const LANE = 2; // lane width; lanes sit at x = -2, 0, 2
+import { LANE } from '../spawn';
+export { LANE };
 const ROAD_HALF = 3.3;
 const WALK = 2.5;
 
