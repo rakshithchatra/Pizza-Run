@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pizza Run — design sheet</title>
+<style>
+  :root { --tomato:#e23d28; --cream:#fff1d0; --basil:#3f8f4f; --crust:#e0a440; --navy:#1c2340; --ink:#2a2140; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--cream); color:var(--ink); font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+  #gl { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:1; }
+  main { max-width:1080px; margin:0 auto; padding:32px 20px 80px; }
+  h1 { font-size:44px; margin:0; font-weight:900; letter-spacing:-1px; color:var(--tomato); }
+  h1 span { color:var(--navy); }
+  .sub { margin:6px 0 28px; opacity:.75; }
+  h2 { font-size:22px; margin:44px 0 6px; font-weight:900; }
+  h2 + p { margin:0 0 14px; opacity:.7; font-size:14px; }
+  .top { display:flex; gap:32px; align-items:flex-start; flex-wrap:wrap; }
+  .phone { position:relative; width:300px; height:580px; flex:none; }
+  /* frame sits above the WebGL canvas so the square viewport gets rounded corners */
+  .phone::after { content:''; position:absolute; inset:-8px; border:8px solid var(--navy); border-radius:36px; box-shadow:0 0 0 12px var(--cream); z-index:3; pointer-events:none; }
+  .phone .view { position:absolute; inset:0; }
+  .hud { position:absolute; inset:0; z-index:2; padding:16px 14px; font-weight:900; color:#fff; pointer-events:none; }
+  .pill { display:inline-flex; align-items:center; gap:6px; background:rgba(28,35,64,.78); border-radius:999px; padding:6px 12px 6px 8px; font-size:17px; }
+  .pill svg { width:20px; height:20px; }
+  .hud .score { position:absolute; right:14px; top:16px; }
+  .hud .pause { position:absolute; right:14px; top:58px; width:36px; height:36px; border-radius:50%; background:rgba(28,35,64,.78); display:grid; place-items:center; font-size:13px; letter-spacing:2px; }
+  .hud .x2 { position:absolute; left:14px; top:58px; background:var(--tomato); border-radius:10px; padding:4px 9px; font-size:14px; }
+  .side { flex:1; min-width:260px; }
+  .swatches { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 20px; }
+  .sw { width:92px; font-size:11px; font-weight:700; }
+  .sw i { display:block; height:52px; border-radius:12px; margin-bottom:5px; border:1px solid rgba(0,0,0,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
+  .card { background:#fff; border-radius:18px; padding:10px; border:1px solid rgba(42,33,64,.1); }
+  .card .view { height:230px; border-radius:12px; background:linear-gradient(#ffd9a0, #ffe9c4); }
+  .card.tall .view { height:320px; }
+  .card b { display:block; margin:9px 4px 1px; font-size:15px; }
+  .card small { display:block; margin:0 4px 4px; opacity:.65; font-size:12px; line-height:1.35; }
+  .tag { display:inline-block; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.5px; padding:2px 7px; border-radius:6px; color:#fff; margin-left:6px; vertical-align:2px; }
+  .tag.block { background:var(--navy); } .tag.jump { background:var(--tomato); } .tag.slide { background:var(--basil); }
+  .poses { display:flex; gap:6px; margin:0 0 12px; }
+  .poses button { font:inherit; font-weight:800; font-size:13px; border:2px solid var(--navy); background:#fff; color:var(--navy); border-radius:999px; padding:5px 14px; cursor:pointer; }
+  .poses button.on { background:var(--navy); color:#fff; }
+  ul { padding-left:18px; line-height:1.6; font-size:14px; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<main>
+  <h1>Pizza <span>Run</span></h1>
+  <p class="sub">Design sheet. Everything below is the real in-game art, rendered live.</p>
+
+  <div class="top">
+    <div class="phone">
+      <div class="view" id="hero"></div>
+      <div class="hud">
+        <span class="pill"><svg viewBox="0 0 20 20"><path d="M10 19 2 4h16z" fill="#ffc94a"/><path d="M1 2h18v3H1z" fill="#e0a440"/><circle cx="8" cy="8" r="1.7" fill="#b8261a"/><circle cx="12" cy="10" r="1.7" fill="#b8261a"/><circle cx="10" cy="14" r="1.4" fill="#b8261a"/></svg>128</span>
+        <span class="pill score">02,450</span>
+        <span class="x2">2x</span>
+        <span class="pause">II</span>
+      </div>
+    </div>
+    <div class="side">
+      <h2 style="margin-top:0">Look</h2>
+      <p>Chunky low-poly city at golden hour. Warm, edible colours; nothing photoreal.</p>
+      <div class="swatches" id="swatches"></div>
+      <h2>How it plays</h2>
+      <ul>
+        <li>Three lanes. Swipe left / right to switch, up to jump, down to slide.</li>
+        <li>Slices are worth 1 pizza point, a whole pie is worth 10.</li>
+        <li>Speed ramps up the longer you survive.</li>
+        <li>Pizza points bank into a wallet that carries between runs.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Runners</h2>
+  <p>Three to start. Same size and moves, different outfits.</p>
+  <div class="poses" id="poses"></div>
+  <div class="grid" id="characters"></div>
+
+  <h2>Pizza points</h2>
+  <p>They spin and bob in the lane.</p>
+  <div class="grid" id="pickups"></div>
+
+  <h2>Obstacles</h2>
+  <p>Each one reads at a glance: go around, jump, or slide.</p>
+  <div class="grid" id="obstacles"></div>
+
+  <h2>City kit</h2>
+  <p>Streets are assembled at random from these pieces, so no two runs look the same.</p>
+  <div class="grid" id="city"></div>
+</main>
+<script type="module" src="/src/design.ts"></script>
+</body>
+</html>

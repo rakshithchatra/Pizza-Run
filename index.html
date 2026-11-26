@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#1c2340" />
+<title>Pizza Run</title>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="layer" hidden>
+  <div class="row">
+    <div class="left">
+      <span class="pill"><svg viewBox="0 0 20 20"><path d="M10 19 2 4h16z" fill="#ffc94a"/><path d="M1 2h18v3H1z" fill="#e0a440"/><circle cx="8" cy="8" r="1.7" fill="#b8261a"/><circle cx="12" cy="10" r="1.7" fill="#b8261a"/><circle cx="10" cy="14" r="1.4" fill="#b8261a"/></svg><span id="h-pizzas">0</span></span>
+      <span class="power" id="p-magnet" hidden><span>Magnet</span></span>
+      <span class="power" id="p-x2" hidden><span>2x pizzas</span></span>
+    </div>
+    <div>
+      <span class="pill" style="padding-left:14px" id="h-score">0</span>
+      <button id="pause" aria-label="Pause">II</button>
+    </div>
+  </div>
+</div>
+
+<div id="menu" class="layer screen">
+  <h1>Pizza <span>Run</span></h1>
+  <div class="stats">
+    <span class="pill"><svg viewBox="0 0 20 20"><path d="M10 19 2 4h16z" fill="#ffc94a"/><path d="M1 2h18v3H1z" fill="#e0a440"/><circle cx="8" cy="8" r="1.7" fill="#b8261a"/><circle cx="12" cy="10" r="1.7" fill="#b8261a"/><circle cx="10" cy="14" r="1.4" fill="#b8261a"/></svg><span id="wallet">0</span><small>pizza points</small></span>
+    <span class="pill" style="padding-left:14px"><small>Best</small><span id="best">0</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="picker">
+    <button id="prev" aria-label="Previous runner">&lsaquo;</button>
+    <div><b id="cname"></b><small id="cblurb"></small></div>
+    <button id="next" aria-label="Next runner">&rsaquo;</button>
+  </div>
+  <button id="play" class="big">Run!</button>
+  <p class="hint">Swipe left / right to dodge &middot; up to jump &middot; down to slide</p>
+  <button id="mute" class="ghost">Sound on</button>
+</div>
+
+<div id="over" class="layer screen dim" hidden>
+  <h2>Splat!</h2>
+  <span class="badge" id="o-record" hidden>New best score</span>
+  <div class="card">
+    <div class="line hero"><span>Pizza points</span><b id="o-pizzas">+0</b></div>
+    <div class="line"><span>Distance</span><b id="o-metres">0 m</b></div>
+    <div class="line"><span>Score</span><b id="o-score">0</b></div>
+    <div class="line"><span>Wallet</span><b id="o-wallet">0</b></div>
+  </div>
+  <button id="again" class="big">Run again</button>
+  <button id="home" class="ghost">Change runner</button>
+</div>
+
+<div id="paused" class="layer screen dim" hidden>
+  <h2>Paused</h2>
+  <button id="resume" class="big">Resume</button>
+  <button id="quit" class="ghost">End run</button>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
