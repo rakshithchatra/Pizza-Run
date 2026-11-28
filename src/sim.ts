@@ -1,7 +1,7 @@
 // The rules of a run: movement, spawning, collisions, pickups. Pure, so a bot can play it in a test.
 // Rendering lives in game.ts and attaches a "view" (a 3D model) to each obstacle and pickup.
 import type { Dir } from './input';
-import { GRAVITY, JUMP_V, LANE, META, spawner, type ObstacleKind, type Pickup, type Row } from './spawn';
+import { GRAVITY, JUMP_V, LANE, META, spawner, type Lesson, type ObstacleKind, type Pickup, type Row } from './spawn';
 
 export const START_SPEED = 11;
 export const MAX_SPEED = 24;
@@ -32,14 +32,36 @@ export function createSim<V>(views: Views<V>, hooks: Hooks) {
   const s = { dead: false, dist: 0, speed: START_SPEED, lane: 0, prevLane: 0, x: 0, y: 0, vy: 0, slideT: 0, stumbleT: 0, magnetT: 0, x2T: 0, jumpBuf: 0, pizzas: 0 };
   let next = spawner(1);
   let spawnedTo = 0;
+  // First-play lesson: a scripted stretch of road where the run freezes at each obstacle until the right move is made.
+  let steps: Lesson['steps'] = [];
+  let stepAt = 0;
+  let lessonFree = 0;
+  let lessonEnd = 0;
 
-  function reset(seed: number) {
+  function reset(seed: number, lesson?: Lesson) {
     for (const o of obs) views.free(o.kind, o.view);
     for (const p of pks) views.free(p.kind, p.view);
     obs.length = pks.length = 0;
     Object.assign(s, { dead: false, dist: 0, speed: START_SPEED, lane: 0, prevLane: 0, x: 0, y: 0, vy: 0, slideT: 0, stumbleT: 0, magnetT: 0, x2T: 0, jumpBuf: 0, pizzas: 0 });
-    next = spawner(seed);
+    steps = lesson?.steps ?? [];
+    stepAt = 0;
+    lessonFree = lesson?.free ?? 0;
+    lessonEnd = lesson?.end ?? 0;
+    next = spawner(seed, lesson?.end);
     spawnedTo = 0;
+    if (lesson) {
+      lesson.rows.forEach(place);
+      spawnedTo = lesson.end;
+    }
+  }
+
+  /** True while the lesson is holding the run still, waiting for a move. */
+  const waiting = () => stepAt < steps.length && steps[stepAt].s - s.dist <= steps[stepAt].gap;
+  /** The lesson's state, or null once it is over (or there was none). */
+  const lessonNow = () => (s.dist < lessonEnd ? { need: stepAt < steps.length ? steps[stepAt].need : null, waiting: waiting() } : null);
+  function skipLesson() {
+    steps = [];
+    lessonFree = lessonEnd = 0;
   }
 
   function place(row: Row) {
@@ -56,8 +78,8 @@ export function createSim<V>(views: Views<V>, hooks: Hooks) {
   }
 
   function step(dt: number) {
-    if (s.dead) return;
-    s.speed = Math.min(MAX_SPEED, s.speed + ACCEL * dt);
+    if (s.dead || waiting()) return;
+    if (s.dist >= lessonEnd) s.speed = Math.min(MAX_SPEED, s.speed + ACCEL * dt); // the lesson stays at walking pace
     s.dist += s.speed * dt;
     const tx = s.lane * LANE;
     s.x += Math.sign(tx - s.x) * Math.min(Math.abs(tx - s.x), 15 * dt);
@@ -117,6 +139,10 @@ export function createSim<V>(views: Views<V>, hooks: Hooks) {
 
   function input(dir: Dir) {
     if (s.dead) return;
+    if (s.dist < lessonFree) {
+      if (!waiting() || dir !== steps[stepAt].need) return; // during the lesson only the move being taught counts
+      stepAt++;
+    }
     if (dir === 'left' || dir === 'right') {
       const to = Math.max(-1, Math.min(1, s.lane + (dir === 'left' ? -1 : 1)));
       if (to !== s.lane) { s.prevLane = s.lane; s.lane = to; }
@@ -129,5 +155,5 @@ export function createSim<V>(views: Views<V>, hooks: Hooks) {
     }
   }
 
-  return { s, obs, pks, reset, step, input };
+  return { s, obs, pks, reset, step, input, waiting, lesson: lessonNow, skipLesson };
 }

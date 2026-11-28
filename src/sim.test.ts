@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { createSim, MAX_SPEED, STEP } from './sim';
-import { META } from './spawn';
+import { lesson, META } from './spawn';
 
 const quiet = { pickup() {}, jump() {}, slide() {}, stumble() {}, crash() {} };
 const noViews = { ob: () => null, pk: () => null, free() {} };
@@ -44,4 +44,29 @@ test('a full run from the start line is survivable and pays out pizzas', () => {
   const run = play(42, 11, 4000, 0.6);
   expect(run.dead).toBe(false);
   expect(run.pizzas).toBeGreaterThan(200);
+});
+
+test('the first-play lesson teaches four moves and cannot be failed', () => {
+  let stumbles = 0;
+  const sim = createSim(noViews, { ...quiet, stumble: () => stumbles++ });
+  sim.reset(7, lesson());
+  const taught: string[] = [];
+  let steps = 0;
+  while (sim.lesson() && steps++ < 1e6) {
+    const l = sim.lesson()!;
+    if (l.need) sim.input(l.need === 'left' ? 'right' : 'left'); // mashing the wrong move must do nothing
+    else if (sim.s.dist < 166) sim.input('left'); // nor can you steer back into the last car
+    if (l.waiting && l.need) {
+      const before = sim.s.dist;
+      sim.step(STEP);
+      expect(sim.s.dist).toBe(before); // frozen until the move is made
+      taught.push(l.need);
+      sim.input(l.need);
+    }
+    sim.step(STEP);
+  }
+  expect(taught).toEqual(['up', 'down', 'left', 'right']);
+  expect({ dead: sim.s.dead, stumbles }).toEqual({ dead: false, stumbles: 0 });
+  expect(sim.s.pizzas).toBeGreaterThan(40);
+  expect(sim.s.dist / 11).toBeLessThan(20); // seconds of running, not counting time spent frozen
 });

@@ -57,7 +57,49 @@ h2 { margin:0; font-size:44px; font-weight:900; text-shadow:0 4px 0 rgba(28,35,6
 /* feedback */
 @keyframes pop { 0% { transform:scale(1); } 35% { transform:scale(1.22); } 100% { transform:scale(1); } }
 .pop { animation:pop .18s ease-out; }
-#coach { position:absolute; left:50%; top:30%; translate:-50% 0; background:var(--cream); color:var(--navy); border-radius:999px; padding:10px 24px; font-size:26px; font-weight:900; white-space:nowrap; box-shadow:0 5px 0 rgba(28,35,64,.3); }
+#toast { position:absolute; left:50%; top:30%; translate:-50% 0; background:var(--cream); color:var(--navy); border-radius:999px; padding:10px 24px; font-size:26px; font-weight:900; white-space:nowrap; box-shadow:0 5px 0 rgba(28,35,64,.3); }
 #count { position:absolute; left:50%; top:38%; translate:-50% -50%; font-size:110px; font-weight:900; text-shadow:0 6px 0 rgba(28,35,64,.5); }
 #count.pop { animation-duration:.4s; }
 .tiny { margin-top:8px; font-size:12px; font-weight:700; color:#fff; opacity:.8; }
+
+/* first-play lesson */
+#hud.frozen { background:rgba(28,35,64,.28); }
+#tutor { position:absolute; left:50%; top:17%; translate:-50% 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+#tutor b { background:var(--cream); color:var(--navy); border-radius:999px; padding:10px 22px; font-size:22px; font-weight:900; white-space:nowrap; box-shadow:0 5px 0 rgba(28,35,64,.3); }
+.swipe { position:relative; width:170px; height:170px; }
+.finger { position:absolute; left:50%; top:50%; width:50px; height:50px; margin:-25px; border-radius:50%; background:#fff; box-shadow:0 0 0 10px rgba(255,255,255,.35); animation:swipe .9s ease-in-out infinite; }
+@keyframes swipe {
+  0% { transform:translate(calc(var(--dx) * -1), calc(var(--dy) * -1)) scale(.8); opacity:0; }
+  25% { opacity:1; transform:translate(calc(var(--dx) * -1), calc(var(--dy) * -1)) scale(1); }
+  80% { opacity:1; }
+  100% { transform:translate(var(--dx), var(--dy)) scale(1); opacity:0; }
+}
+#tutor[data-dir=up] { --dx:0px; --dy:-60px; }
+#tutor[data-dir=down] { --dx:0px; --dy:60px; }
+#tutor[data-dir=left] { --dx:-60px; --dy:0px; }
+#tutor[data-dir=right] { --dx:60px; --dy:0px; }
+#skip { pointer-events:auto; position:absolute; left:50%; translate:-50% 0; bottom:calc(env(safe-area-inset-bottom) + 24px); }
+
+/* game over: a slice is thrown at the screen, then slides down it */
+#over { justify-content:center; overflow:hidden; }
+#over.go { animation:dim .5s both; }
+@keyframes dim { to { background:rgba(28,35,64,.62); } }
+#over .slice { position:absolute; left:50%; top:40%; width:min(78vw, 330px); translate:-50% -50%; pointer-events:none; z-index:2; filter:drop-shadow(0 10px 0 rgba(28,35,64,.35)); }
+#over.go .slice { animation:throw .32s cubic-bezier(.2,1.5,.4,1) both, slideoff 2.6s cubic-bezier(.5,0,.9,.5) .95s forwards; }
+@keyframes throw { from { transform:scale(.02) rotate(-260deg); } to { transform:scale(1) rotate(-12deg); } }
+@keyframes slideoff { from { transform:translateY(0) rotate(-12deg); } to { transform:translateY(130vh) rotate(-5deg); } }
+#over .smear { position:absolute; left:50%; top:40%; width:110px; margin-left:-55px; height:54vh; border-radius:0 0 55px 55px; transform-origin:top; transform:scaleY(0);
+  background:linear-gradient(rgba(226,61,40,.7), rgba(226,61,40,.5) 60%, rgba(226,61,40,.15)); pointer-events:none; }
+#over.go .smear { animation:smear 2.6s cubic-bezier(.5,0,.9,.5) .95s forwards; }
+@keyframes smear { to { transform:scaleY(1); } }
+#over .blob { position:absolute; left:50%; top:40%; width:26px; height:26px; margin:-13px; border-radius:50%; background:var(--tomato); translate:var(--x) var(--y); transform:scale(0); pointer-events:none; }
+#over.go .blob { animation:blob .28s .14s cubic-bezier(.2,1.6,.4,1) forwards; }
+@keyframes blob { to { transform:scale(var(--s)); } }
+.result { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; z-index:1; opacity:0; pointer-events:none; }
+#over.go .result { animation:cardin .45s 1.8s both; }
+#over.ready .result { pointer-events:auto; }
+@keyframes cardin { from { opacity:0; transform:translateY(24px) scale(.94); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) {
+  #over.go .slice, #over.go .smear, #over.go .blob { animation-duration:.01s; animation-delay:0s; }
+  #over.go .result { animation-delay:.2s; }
+}

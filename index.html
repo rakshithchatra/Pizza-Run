@@ -23,7 +23,12 @@
       <button id="h-mute" aria-label="Turn sound off"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="cross" d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
   </div>
-  <div id="coach" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="tutor" hidden>
+    <div class="swipe"><span class="finger"></span></div>
+    <b id="tutor-text"></b>
+  </div>
+  <button id="skip" class="ghost" hidden>Skip lesson</button>
   <div id="count" hidden></div>
 </div>
 
@@ -40,22 +45,39 @@
     <button id="next" aria-label="Next runner">&rsaquo;</button>
   </div>
   <button id="play" class="big">Run!</button>
-  <p class="hint">Swipe left / right to dodge &middot; up to jump &middot; down to slide</p>
-  <button id="mute" class="ghost">Sound on</button>
+  <button id="howto" class="ghost" style="margin-top:14px">How to play</button>
+  <button id="mute" class="ghost" style="margin-top:8px">Sound on</button>
   <a class="tiny" href="privacy.html">Privacy</a>
 </div>
 
-<div id="over" class="layer screen dim" hidden>
-  <h2>Splat!</h2>
-  <span class="badge" id="o-record" hidden>New best score</span>
-  <div class="card">
-    <div class="line hero"><span>Pizza points</span><b id="o-pizzas">+0</b></div>
-    <div class="line"><span>Distance</span><b id="o-metres">0 m</b></div>
-    <div class="line"><span>Score</span><b id="o-score">0</b></div>
-    <div class="line"><span>Wallet</span><b id="o-wallet">0</b></div>
+<div id="over" class="layer screen" hidden>
+  <!-- a slice hits the screen, says OOPS, and slides off leaving sauce -->
+  <div class="smear"></div>
+  <i class="blob" style="--x:-36vw; --y:-22vh; --s:1.5"></i>
+  <i class="blob" style="--x:34vw; --y:-27vh; --s:1"></i>
+  <i class="blob" style="--x:40vw; --y:-4vh; --s:1.9"></i>
+  <i class="blob" style="--x:-42vw; --y:6vh; --s:1.1"></i>
+  <i class="blob" style="--x:-22vw; --y:-33vh; --s:.8"></i>
+  <i class="blob" style="--x:18vw; --y:-36vh; --s:1.3"></i>
+  <div class="result">
+    <span class="badge" id="o-record" hidden>New best score</span>
+    <div class="card">
+      <div class="line hero"><span>Pizza points</span><b id="o-pizzas">+0</b></div>
+      <div class="line"><span>Distance</span><b id="o-metres">0 m</b></div>
+      <div class="line"><span>Score</span><b id="o-score">0</b></div>
+      <div class="line"><span>Wallet</span><b id="o-wallet">0</b></div>
+    </div>
+    <button id="again" class="big">Try again</button>
+    <button id="home" class="ghost">Quit</button>
   </div>
-  <button id="again" class="big">Run again</button>
-  <button id="home" class="ghost">Change runner</button>
+  <div class="slice" aria-hidden="true">
+    <svg viewBox="0 0 300 350">
+      <path d="M150 338 22 72h256z" fill="#ffc94a" stroke="#1c2340" stroke-width="9" stroke-linejoin="round"/>
+      <rect x="6" y="20" width="288" height="66" rx="33" fill="#e0a440" stroke="#1c2340" stroke-width="9"/>
+      <circle cx="102" cy="128" r="23" fill="#b8261a"/><circle cx="204" cy="132" r="23" fill="#b8261a"/><circle cx="150" cy="262" r="19" fill="#b8261a"/>
+      <text x="150" y="214" text-anchor="middle" font-size="60" font-weight="900" fill="#e23d28" stroke="#1c2340" stroke-width="9" paint-order="stroke" stroke-linejoin="round">OOPS!</text>
+    </svg>
+  </div>
 </div>
 
 <div id="paused" class="layer screen dim" hidden>

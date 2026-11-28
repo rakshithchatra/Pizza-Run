@@ -28,5 +28,5 @@ export const sfx = {
   jump() { tone(280, 0.14, 'sine', 0.07, 520); },
   slide() { tone(200, 0.16, 'sine', 0.06, 110); },
   stumble() { tone(180, 0.22, 'square', 0.09, 70); },
-  crash() { tone(220, 0.5, 'sawtooth', 0.16, 40); tone(90, 0.4, 'square', 0.12, 30); },
+  crash() { tone(220, 0.3, 'sawtooth', 0.14, 40); tone(90, 0.3, 'square', 0.1, 30); tone(520, 0.9, 'sine', 0.07, 110, 0.95); }, // thud, then a slide whistle as the slice slips down
 };

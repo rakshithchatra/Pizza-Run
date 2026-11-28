@@ -1,4 +1,5 @@
 // Level generator. Pure: no rendering, no DOM, so it can be tested on its own.
+import type { Dir } from './input';
 import { rng } from './rng';
 
 export type ObstacleKind = 'taxi' | 'car' | 'van' | 'bus' | 'scooter' | 'cart' | 'dumpster' | 'barrier' | 'cones' | 'boxes' | 'scaffold' | 'banner';
@@ -48,10 +49,10 @@ const KINDS: Record<string, ObstacleKind[]> = {
  * Returns next(difficulty 0..1, speed m/s) -> the next row down the road.
  * Rows never overlap, and the gap between them grows with speed so there is always time to react.
  */
-export function spawner(seed: number) {
+export function spawner(seed: number, start = 30) {
   const r = rng(seed);
   const pick = <T>(a: T[]) => a[Math.floor(r() * a.length)];
-  let cursor = 30; // end of the previous row
+  let cursor = start; // end of the previous row
   let trail = 1; // lane index the pizza trail is in
   let sincePower = 0;
 
@@ -100,5 +101,39 @@ export function spawner(seed: number) {
       pickups.push({ kind: r() < 0.5 ? 'magnet' : 'x2', s: s - gap / 2, lane: Math.floor(r() * 3) - 1, y: 1 }); // mid-gap is always clear
     }
     return { s, len, cells, pickups };
+  };
+}
+
+/** steps: at `gap` metres before road position `s`, the run freezes until the player makes the `need` move. */
+/** free: road position where the player gets full control back. end: where the lesson is over and normal spawning starts. */
+export interface Lesson { rows: Row[]; steps: { s: number; need: Dir; gap: number }[]; free: number; end: number }
+
+/**
+ * The first-play lesson: about 18 seconds, one obstacle per move, in a fixed order.
+ * Every obstacle is placed so that making the move at the freeze point always clears it.
+ */
+export function lesson(): Lesson {
+  const trail = (lane: number, from: number, to: number, y: (u: number) => number = () => 0.9) => {
+    const out: Pickup[] = [];
+    for (let u = from; u <= to; u += 1.6) out.push({ kind: 'slice', s: u, lane, y: y(u) });
+    return out;
+  };
+  const half = (11 * JUMP_V) / GRAVITY;
+  return {
+    rows: [
+      { s: 40, len: 1, cells: ['barrier', 'barrier', 'barrier'], pickups: trail(0, 30, 48, (u) => 0.9 + APEX * Math.max(0, 1 - ((u - 40.25) / half) ** 2)) },
+      { s: 80, len: 1, cells: ['banner', 'banner', 'banner'], pickups: trail(0, 62, 88, (u) => (u > 77 && u < 83 ? 0.45 : 0.9)) },
+      { s: 120, len: 3.2, cells: [null, 'car', 'taxi'], pickups: trail(-1, 116, 128) },
+      { s: 160, len: 3.2, cells: ['taxi', null, null], pickups: trail(0, 156, 168) },
+      { s: 175, len: 1, cells: [null, null, null], pickups: [...trail(0, 174, 196), { kind: 'pie', s: 199, lane: 0, y: 0.9 }] }, // a victory lap of pizza
+    ],
+    steps: [
+      { s: 40, need: 'up', gap: 3.5 },
+      { s: 80, need: 'down', gap: 3 },
+      { s: 120, need: 'left', gap: 6 },
+      { s: 160, need: 'right', gap: 6 },
+    ],
+    free: 166, // just past the last car, so a stray swipe can't steer back into it
+    end: 205,
   };
 }

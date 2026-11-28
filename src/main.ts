@@ -28,7 +28,7 @@ const game = createGame($('game') as HTMLCanvasElement, {
   jump: sfx.jump,
   slide: sfx.slide,
   stumble() { sfx.stumble(); buzz(ImpactStyle.Medium); },
-  crash() { sfx.crash(); buzz(ImpactStyle.Heavy); setTimeout(endRun, 900); },
+  crash() { sfx.crash(); buzz(ImpactStyle.Heavy); endRun(); },
 });
 
 /** Restart a one-shot CSS animation. */
@@ -72,14 +72,18 @@ function pickRunner(step: number) {
   drawMenu();
 }
 
-function play() {
+/** The first run is a guided lesson; after that it only runs from "How to play". */
+function play(withLesson = !save.coached) {
   sfx.unlock();
-  game.start();
+  game.start(withLesson);
   show('hud');
+  inLesson = false;
+  if (withLesson) toast('Quick lesson: 4 moves', 2600);
 }
 
 function toMenu() {
   game.toMenu();
+  drawLesson();
   drawMenu();
   show('menu');
 }
@@ -95,7 +99,6 @@ function bank() {
 }
 
 function endRun() {
-  if (game.state !== 'dead') return; // already left the run
   const { pizzas, score, metres } = game.stats();
   const record = bank();
   $('o-pizzas').textContent = `+${fmt(pizzas)}`;
@@ -104,7 +107,15 @@ function endRun() {
   $('o-wallet').textContent = fmt(save.wallet);
   $('o-record').hidden = !record;
   show('over');
+  // Replay the pizza-splat animation, and only take taps once the buttons have appeared.
+  const over = $('over');
+  over.classList.remove('go', 'ready');
+  void over.offsetWidth;
+  over.classList.add('go');
+  clearTimeout(readyTimer);
+  readyTimer = window.setTimeout(() => over.classList.add('ready'), matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 1900);
 }
+let readyTimer = 0;
 
 // Resuming counts down 3-2-1 so you are not dropped straight into an obstacle.
 let countdown = 0;
@@ -132,24 +143,46 @@ function pause(on: boolean) {
   countdown = window.setInterval(tick, 600);
 }
 
-// First run only: name the move as each kind of obstacle comes up in your lane.
-const COACH = { block: '\u2190 Dodge \u2192', jump: '\u2191 Jump', slide: '\u2193 Slide' };
-const coached = new Set<string>();
-function coach() {
-  const d = game.ahead();
-  const o = d.obs.find((o) => o.lane === d.lane && o.s0 > d.dist && o.s0 - d.dist < d.speed * 1.1);
-  $('coach').hidden = !o;
-  if (!o) return;
-  $('coach').textContent = COACH[o.how];
-  coached.add(o.how);
-  if (coached.size === 3) {
-    save.coached = true;
+let toastTimer = 0;
+function toast(text: string, ms: number) {
+  clearTimeout(toastTimer);
+  $('toast').textContent = text;
+  $('toast').hidden = false;
+  pop($('toast'));
+  toastTimer = window.setTimeout(() => ($('toast').hidden = true), ms);
+}
+
+// First-play lesson: the run freezes at each obstacle and this shows which move to make.
+const verb = matchMedia('(pointer: coarse)').matches ? 'Swipe' : 'Swipe or press';
+const PROMPT = {
+  up: `${verb} \u2191 to jump`,
+  down: `${verb} \u2193 to slide`,
+  left: `${verb} \u2190 to dodge`,
+  right: `${verb} \u2192 to dodge`,
+};
+let inLesson = false;
+function drawLesson() {
+  const l = game.state === 'run' ? game.lesson() : null;
+  if (inLesson && !l && game.state === 'run') {
+    save.coached = true; // made it through (or skipped): never show it uninvited again
     store(save);
+    toast("You're ready. Go!", 1800);
+  }
+  inLesson = !!l;
+  const need = l?.waiting && !game.paused ? l.need : null;
+  $('tutor').hidden = !need;
+  $('hud').classList.toggle('frozen', !!need);
+  $('skip').hidden = !l;
+  if (need && $('tutor').dataset.dir !== need) {
+    $('tutor').dataset.dir = need;
+    $('tutor-text').textContent = PROMPT[need];
   }
 }
 
-$('play').onclick = play;
-$('again').onclick = play;
+$('play').onclick = () => play();
+$('howto').onclick = () => play(true);
+$('skip').onclick = () => game.skipLesson();
+$('again').onclick = () => play();
 $('home').onclick = toMenu;
 $('prev').onclick = () => pickRunner(-1);
 $('next').onclick = () => pickRunner(1);
@@ -166,7 +199,7 @@ listen(
     else game.input(dir);
   },
   (key) => {
-    if (key === 'Enter' && game.state !== 'run') play();
+    if (key === 'Enter' && (game.state === 'menu' || $('over').classList.contains('ready'))) play();
     if (key === 'm') toggleMute();
     if (key === 'Escape' || key === 'p') pause($('paused').hidden !== false);
   },
@@ -183,9 +216,8 @@ function loop(ms: number) {
       $(id).hidden = left <= 0;
       $(id).style.setProperty('--left', String(left));
     }
-    if (!save.coached && !game.paused) coach();
-    else $('coach').hidden = true;
   }
+  drawLesson();
   requestAnimationFrame(loop);
 }
 drawMenu();

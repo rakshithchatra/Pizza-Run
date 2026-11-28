@@ -7,7 +7,7 @@ import { pie, powerup, slice } from './art/pizza';
 import { bake } from './art/util';
 import type { Dir } from './input';
 import { createSim, MAGNET_TIME, MAX_SPEED, START_SPEED, STEP, STUMBLE_TIME, X2_TIME, type Hooks } from './sim';
-import { LANE, META, type ObstacleKind, type Pickup } from './spawn';
+import { LANE, lesson, META, type ObstacleKind, type Pickup } from './spawn';
 
 const CHUNK = 40; // metres of street per block
 const CHUNKS = 5;
@@ -88,8 +88,8 @@ export function createGame(canvas: HTMLCanvasElement, hooks: Hooks) {
   );
   const { s, obs, pks } = sim;
 
-  function reset() {
-    sim.reset((Math.random() * 2 ** 32) >>> 0);
+  function reset(withLesson = false) {
+    sim.reset((Math.random() * 2 ** 32) >>> 0, withLesson ? lesson() : undefined);
     chunks.forEach((c, i) => (c.k = i - 1));
     deadT = acc = 0;
     tilt.rotation.x = 0;
@@ -110,7 +110,7 @@ export function createGame(canvas: HTMLCanvasElement, hooks: Hooks) {
       cam.updateProjectionMatrix();
     }
     clock += dt;
-    if (state === 'run') stride += (dt * s.speed) / START_SPEED;
+    if (state === 'run' && !sim.waiting()) stride += (dt * s.speed) / START_SPEED; // freeze mid-stride while the lesson waits
     if (state === 'dead') deadT += dt;
 
     for (const c of chunks) {
@@ -157,11 +157,12 @@ export function createGame(canvas: HTMLCanvasElement, hooks: Hooks) {
     get state() { return state; },
     get paused() { return paused; },
     stats: () => ({ pizzas: s.pizzas, metres: Math.floor(s.dist), score: Math.floor(s.dist) + s.pizzas * 5, magnet: Math.max(0, s.magnetT) / MAGNET_TIME, x2: Math.max(0, s.x2T) / X2_TIME }),
-    /** What is coming up, for the first-run hints. */
-    ahead: () => ({ lane: s.lane, dist: s.dist, speed: s.speed, obs: obs.map((o) => ({ lane: o.lane, s0: o.s0, how: META[o.kind].how })) }),
+    /** First-play lesson: which move it is waiting for, or null when there is no lesson running. */
+    lesson: sim.lesson,
+    skipLesson: sim.skipLesson,
     setRunner(id: CharacterId) { who = id; },
     setPaused(p: boolean) { paused = p; },
-    start() { reset(); state = 'run'; paused = false; },
+    start(withLesson = false) { reset(withLesson); state = 'run'; paused = false; },
     toMenu() { reset(); state = 'menu'; paused = false; },
     input(dir: Dir) { if (state === 'run' && !paused) sim.input(dir); },
     frame(ms: number) {
